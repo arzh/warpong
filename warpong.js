@@ -146,6 +146,10 @@ function DrawScene() {
 	ctx.beginPath();
 	ClearScene();
 	Ball.Draw();
+
+	for (var i = Players.length - 1; i >= 0; i--) {
+    	Players[i].Draw();
+    };
 }
 
 function UpdateScene() {
