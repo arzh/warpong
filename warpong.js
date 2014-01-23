@@ -49,7 +49,7 @@ var Ball = {
 	},
 
 	HitY: function() {
-		this.vX *= -(1+speedMod);
+		this.vY *= -(1+speedMod);
 	}
 };
 
@@ -125,9 +125,9 @@ function MainLoop() {
 
     Collision.BallToBounds(Ball);
 
-    for (var i = Players.length - 1; i >= 0; i--) {
-    	Collision.BallToRect(Ball, Players[i]);
-    };
+    // for (var i = Players.length - 1; i >= 0; i--) {
+    // 	Collision.BallToRect(Ball, Players[i]);
+    // };
 
 
     UpdateScene();
