@@ -87,6 +87,8 @@ var Ball = {
 	vX: 1,
 	vY: 1,
 	Rad: 5,
+	Width: 10, //For collision detection
+	Height: 10,
 	Color: '#000',
 
 	Update: function(){
@@ -115,7 +117,7 @@ var Ball = {
 	}
 };
 
-function Paddle(x, y, width, height, color, position) {
+function Paddle(x, y, width, height, color, position, upkey, downkey) {
 	this.X = x;
 	this.Y = y;
 	this.Width = width;
@@ -137,6 +139,13 @@ function Paddle(x, y, width, height, color, position) {
 	this.HandleDown = function() {
 		this.Y += 10;
 	};
+
+	this.SetInput = function(upkey, downkey) {
+		Input.AddDownHandler(upkey, this.HandleUp.bind(this));
+		Input.AddDownHandler(downkey, this.HandleDown.bind(this));
+	};
+
+	this.SetInput(upkey, downkey);
 }
 
 var Collision = {
@@ -155,16 +164,42 @@ var Collision = {
 	},
 
 	Rect: function(rect1, rect2) {
-		//console.log("BallToRect:" + JSON.stringify(ball, null, 4) + JSON.stringify(rect, null, 4));
-		if (this.Between(rect2.L(), rect1.L(), rect2.R()) ||
-			this.Between(rect2.L(), rect1.R(), rect2.R())) {
-				rect1.HitX();
-			}
+		//We must always check smallest to largets, so lets determain which is which
+		var big = null;
+		var small = null;
 
-		if (this.Between(rect2.T(), rect1.T(), rect2.B()) ||
-			this.Between(rect2.T(), rect1.B(), rect2.B())) {
-				rect1.HitY();
-			}
+		// Testing the X-Axis
+		if (rect1.Width < rect2.Width) {
+			small = rect1;
+			big = rect2;
+		} else {
+			big = rect1;
+			small = rect2;
+		}
+
+		var l_hit = this.Between(big.L(), small.L(), big.R());
+		var r_hit = this.Between(big.R(), small.R(), big.L());
+		var x_hit = l_hit || r_hit;
+
+		// Gotta do it for the Y axis too
+		if (rect1.Height < rect2.Height) {
+			small = rect1;
+			big = rect2;
+		} else {
+			big = rect1;
+			small = rect2;
+		}
+
+		var t_hit = this.Between(big.T(), small.T(), big.B());
+		var b_hit = this.Between(big.B(), small.B(), big.T());
+		var y_hit = t_hit || b_hit;
+
+		// If we hit in at least one X and one Y we got a true hit
+		if (x_hit && y_hit) {
+			console.log("Collision.Rect: Hit");
+			rect1.HitX();
+			rect1.HitY();
+		}
 	},
 
 	Between: function(low, x, high) {
@@ -180,9 +215,7 @@ function StartNew() {
 
 	Ball.Set();
 
-	p1 = new Paddle(20, 100, 5, 100, '#000', "left");
-	Input.AddDownHandler("W", p1.HandleUp.bind(p1));
-	Input.AddDownHandler("S", p1.HandleDown.bind(p1));
+	p1 = new Paddle(20, 100, 5, 100, '#000', "left", "W", "S");
 
 	Players[0] = p1;
 
