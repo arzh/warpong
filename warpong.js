@@ -1,13 +1,18 @@
-var scene = {
+var Scene = {
 	X:0,
 	Y:0,
 	Width: 800,
-	Height: 400
+	Height: 400,
+
+	R: function(){ return this.X + this.Width; },
+	L: function(){ return this.X; },
+	T: function(){ return this.Y; },
+	B: function(){ return this.Y + this.Height; }
 };
 
 var canvas = document.getElementById("scene");
-canvas.width = scene.Width
-canvas.height = scene.Height
+canvas.width = Scene.Width
+canvas.height = Scene.Height
 var ctx = canvas.getContext("2d");
 var speedMod = 0.0;
 
@@ -33,10 +38,10 @@ var Ball = {
 	},
 
 	Set: function(){
-		this.X = scene.Width/2;
-		this.Y = scene.Height/2;
-		this.vX = 0.8;
-		this.vY = 0.8;
+		this.X = Scene.Width/2;
+		this.Y = Scene.Height/2;
+		this.vX = -1.2;
+		this.vY = -0.2;
 	},
 
 	R: function(){ return this.X + this.Rad; },
@@ -68,42 +73,42 @@ function Paddle(x, y, width, height, color, position) {
 		ctx.fillRect(this.X, this.Y, this.Width, this.Height);
 	};
 
-	this.X2 = function() {
-		return this.X + this.Width;
-	};
-
-	this.Y2 = function() {
-		return this.Y + this.Height;
-	};
+	this.R = function(){ return this.X + this.Width; };
+	this.L = function(){ return this.X; };
+	this.T = function(){ return this.Y; };
+	this.B = function(){ return this.Y + this.Height; };
 }
 
 var Collision = {
-	BallToBounds: function(ball) {
-		if (ball.L() < scene.X || ball.R() > scene.Width) {
-			console.log("Bounds hit X:"+ball.X);
-			ball.HitX();
+	//TODO: remove hit functionality out of this
+	Bounds: function(rect1, rect2) {
+		if (rect1.L() < rect2.L() || rect1.R() > rect2.R()) {
+			//console.log("Bounds hit X:"+ball.X);
+			rect1.HitX();
 		}
 			
 
-		if (ball.T() < scene.Y || ball.B() > scene.Height) {
-			console.log("Bounds hit Y:"+ball.Y);
-			ball.HitY();
+		if (rect1.T() < rect2.T() || rect1.B() > rect2.B()) {
+			//console.log("Bounds hit Y:"+ball.Y);
+			rect1.HitY();
 		}
 	},
 
-	BallToRect: function(ball, rect) {
+	Rect: function(rect1, rect2) {
 		//console.log("BallToRect:" + JSON.stringify(ball, null, 4) + JSON.stringify(rect, null, 4));
-		if (!(ball.B() <= rect.Y || ball.T() >= rect.Y2()))
-		{
-			console.log("Rect hit Y:"+ball.Y);
-			ball.HitY();
-		}
+		if (this.Between(rect2.L(), rect1.L(), rect2.R()) ||
+			this.Between(rect2.L(), rect1.R(), rect2.R())) {
+				rect1.HitX();
+			}
 
-		if (!(ball.R() <= rect.X || ball.L() >= rect.X2())) {
-			console.log("Rect hit X:"+ball.X);
-			ball.HitX();
-		}
-			
+		if (this.Between(rect2.T(), rect1.T(), rect2.B()) ||
+			this.Between(rect2.T(), rect1.B(), rect2.B())) {
+				rect1.HitY();
+			}
+	},
+
+	Between: function(low, x, high) {
+		return (low < x && x < high);
 	}
 }
 
@@ -123,11 +128,11 @@ function MainLoop() {
 
     //console.log("X:"+Ball.X+" Y:"+Ball.Y);
 
-    Collision.BallToBounds(Ball);
+    Collision.Bounds(Ball, Scene);
 
-    // for (var i = Players.length - 1; i >= 0; i--) {
-    // 	Collision.BallToRect(Ball, Players[i]);
-    // };
+    for (var i = Players.length - 1; i >= 0; i--) {
+    	Collision.Rect(Ball, Players[i]);
+    };
 
 
     UpdateScene();
@@ -135,11 +140,11 @@ function MainLoop() {
 
 function ClearScene() {
 	ctx.fillStyle = "rgb(255,255,255)";
-	ctx.fillRect (scene.X, scene.Y, scene.Width, scene.Height);
+	ctx.fillRect (Scene.X, Scene.Y, Scene.Width, Scene.Height);
 
 	ctx.lineWidth = 3;
 	ctx.strokeStyle = "rgb(0,0,0)";
-    ctx.strokeRect(scene.X, scene.Y, scene.Width, scene.Height);  
+    ctx.strokeRect(Scene.X, Scene.Y, Scene.Width, Scene.Height);  
 }
 
 function DrawScene() {
