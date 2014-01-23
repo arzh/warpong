@@ -1,19 +1,83 @@
 var Scene = {
 	X:0,
 	Y:0,
-	Width: 800,
+	Width: 300,
 	Height: 400,
+
+	canvas: null,
+	ctx: null,
 
 	R: function(){ return this.X + this.Width; },
 	L: function(){ return this.X; },
 	T: function(){ return this.Y; },
-	B: function(){ return this.Y + this.Height; }
+	B: function(){ return this.Y + this.Height; },
+
+	Init: function() {
+		this.canvas = document.getElementById("scene");
+		this.canvas.width = this.Width
+		this.canvas.height = this.Height
+		this.ctx = this.canvas.getContext("2d");
+	},
+
+	DrawBall: function(ball) {
+		this.ctx.beginPath();
+		this.ctx.fillStyle = ball.Color;
+		this.ctx.arc(ball.X, ball.Y, ball.Rad, 0, Math.PI*2, false);
+		this.ctx.fill();
+	},
+
+	DrawRect: function(rect) {
+		this.ctx.fillStyle = rect.Color;
+		this.ctx.fillRect(rect.X, rect.Y, rect.Width, rect.Height);
+	},
+
+	BeginDraw: function() {
+		this.ctx.fillStyle = "rgb(255,255,255)";
+		this.ctx.fillRect (this.X, this.Y, this.Width, this.Height);
+
+		this.ctx.lineWidth = 3;
+		this.ctx.strokeStyle = "rgb(0,0,0)";
+	    this.ctx.strokeRect(this.X, this.Y, this.Width, this.Height);  
+	}
 };
 
-var canvas = document.getElementById("scene");
-canvas.width = Scene.Width
-canvas.height = Scene.Height
-var ctx = canvas.getContext("2d");
+var Input = {
+	keydowns: null,
+	keyups: null,
+
+	Init: function() {
+		this.keydowns = new Array();
+		this.keyups = new Array();
+		window.addEventListener("keydown", this.onKeyDown.bind(this));
+		window.addEventListener("keyup", this.onKeyUp.bind(this)); 
+	},
+
+	AddDownHandler: function(key, handler) {
+		var kc = key.charCodeAt(0);
+		this.keydowns[kc] = handler;
+	},
+
+	AddUpHandler: function(key, handler) {
+		var kc = key.charCodeAt(0);
+		this.keyups[kc] = handler;
+	},
+
+	onKeyDown: function(e) {
+		var handler = this.keydowns[e.keyCode];
+		if (handler != null) {
+			handler.call();
+		}
+	},
+
+	onKeyUp: function(e) {
+		var handler = this.keyups[e.keyCode];
+		if (handler != null) {
+			handler.call();
+		}
+	}
+}
+
+
 var speedMod = 0.0;
 
 
@@ -24,13 +88,6 @@ var Ball = {
 	vY: 1,
 	Rad: 5,
 	Color: '#000',
-
-	Draw: function(){
-		ctx.beginPath();
-		ctx.fillStyle = this.Color;
-		ctx.arc(this.X, this.Y, this.Rad, 0, Math.PI*2, false);
-		ctx.fill();
-	},
 
 	Update: function(){
 		this.X += this.vX;
@@ -68,15 +125,18 @@ function Paddle(x, y, width, height, color, position) {
 
 	this.PlayerIndex = (position=="left"?1:2);
 
-	this.Draw = function() {
-		ctx.fillStyle = this.Color;
-		ctx.fillRect(this.X, this.Y, this.Width, this.Height);
-	};
-
 	this.R = function(){ return this.X + this.Width; };
 	this.L = function(){ return this.X; };
 	this.T = function(){ return this.Y; };
 	this.B = function(){ return this.Y + this.Height; };
+
+	this.HandleUp = function() {
+		this.Y -= 10;
+	};
+
+	this.HandleDown = function() {
+		this.Y += 10;
+	};
 }
 
 var Collision = {
@@ -115,18 +175,24 @@ var Collision = {
 var Players = new Array();
 
 function StartNew() {
+	Scene.Init();
+	Input.Init();
+
 	Ball.Set();
 
-	Players[0] = new Paddle(20, 100, 5, 100, '#000', "left");
+	p1 = new Paddle(20, 100, 5, 100, '#000', "left");
+	Input.AddDownHandler("W", p1.HandleUp.bind(p1));
+	Input.AddDownHandler("S", p1.HandleDown.bind(p1));
+
+	Players[0] = p1;
+
 
 	MainLoop();
 }
 
 function MainLoop() {
 	var init = requestAnimFrame(MainLoop);
-    DrawScene();
-
-    //console.log("X:"+Ball.X+" Y:"+Ball.Y);
+    Render();
 
     Collision.Bounds(Ball, Scene);
 
@@ -138,31 +204,20 @@ function MainLoop() {
     UpdateScene();
 }
 
-function ClearScene() {
-	ctx.fillStyle = "rgb(255,255,255)";
-	ctx.fillRect (Scene.X, Scene.Y, Scene.Width, Scene.Height);
 
-	ctx.lineWidth = 3;
-	ctx.strokeStyle = "rgb(0,0,0)";
-    ctx.strokeRect(Scene.X, Scene.Y, Scene.Width, Scene.Height);  
-}
 
-function DrawScene() {
-	ctx.beginPath();
-	ClearScene();
-	Ball.Draw();
+function Render() {
+	Scene.BeginDraw();
+
+	Scene.DrawBall(Ball);
 
 	for (var i = Players.length - 1; i >= 0; i--) {
-    	Players[i].Draw();
+    	Scene.DrawRect(Players[i]);
     };
 }
 
 function UpdateScene() {
 	Ball.Update();
-}
-
-function OutOfBounds(ball) {
-
 }
 
 window.requestAnimFrame = (function(){
