@@ -89,7 +89,7 @@ var Ball = {
 	Rad: 5,
 	Width: 10, //For collision detection
 	Height: 10,
-	Color: '#000',
+	Color: "rgb(255,0,0)",
 
 	Update: function(){
 		this.X += this.vX;
@@ -216,8 +216,10 @@ function StartNew() {
 	Ball.Set();
 
 	p1 = new Paddle(20, 100, 5, 100, '#000', "left", "W", "S");
+	p2 = new Paddle(Scene.Width - 25, 100, 5, 100, '#000', "right", "O", "L");
 
 	Players[0] = p1;
+	Players[1] = p2;
 
 
 	MainLoop();
@@ -242,11 +244,11 @@ function MainLoop() {
 function Render() {
 	Scene.BeginDraw();
 
-	Scene.DrawBall(Ball);
-
 	for (var i = Players.length - 1; i >= 0; i--) {
     	Scene.DrawRect(Players[i]);
     };
+
+	Scene.DrawBall(Ball);
 }
 
 function UpdateScene() {
