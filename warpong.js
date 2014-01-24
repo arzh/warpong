@@ -78,7 +78,7 @@ var Input = {
 }
 
 
-var speedMod = 0.0;
+var speedMod = 0.2;
 
 
 var Ball = {
@@ -86,6 +86,7 @@ var Ball = {
 	Y: 0,
 	vX: 1,
 	vY: 1,
+	maxV: 4,
 	Rad: 5,
 	Width: 10, //For collision detection
 	Height: 10,
@@ -109,17 +110,26 @@ var Ball = {
 	B: function(){ return this.Y + this.Rad; },
 
 	HitX: function() {
-		this.vX *= -(1+speedMod);
+		var mod = 1;
+		if (Math.abs(this.vX) < this.maxV)
+			mod += speedMod;
+
+		this.vX *= -mod;
 	},
 
 	HitY: function() {
-		this.vY *= -(1+speedMod);
+		var mod = 1;
+		if (Math.abs(this.vY) < this.maxV)
+			mod += speedMod;
+
+		this.vY *= -mod;
 	}
 };
 
 function Paddle(x, y, width, height, color, position, upkey, downkey) {
 	this.X = x;
 	this.Y = y;
+	this.vY = 0;
 	this.Width = width;
 	this.Height = height;
 
@@ -133,20 +143,34 @@ function Paddle(x, y, width, height, color, position, upkey, downkey) {
 	this.B = function(){ return this.Y + this.Height; };
 
 	this.HandleUp = function() {
-		this.Y -= 10;
+		this.vY -= 1;
 	};
 
 	this.HandleDown = function() {
-		this.Y += 10;
+		this.vY += 1;
 	};
+
+	this.Stop = function() {
+		this.vY = 0;
+	}
+
+	this.Update = function() {
+		this.Y += this.vY;
+	}
 
 	this.SetInput = function(upkey, downkey) {
 		Input.AddDownHandler(upkey, this.HandleUp.bind(this));
 		Input.AddDownHandler(downkey, this.HandleDown.bind(this));
+		Input.AddUpHandler(upkey, this.Stop.bind(this));
+		Input.AddUpHandler(downkey, this.Stop.bind(this));
 	};
 
 	this.SetInput(upkey, downkey);
 }
+
+function IsBetween(left, x, right) {
+	return (left < x && x < right) || (left > x && x > right);
+};
 
 var Collision = {
 	//TODO: remove hit functionality out of this
@@ -164,46 +188,18 @@ var Collision = {
 	},
 
 	Rect: function(rect1, rect2) {
-		//We must always check smallest to largets, so lets determain which is which
-		var big = null;
-		var small = null;
-
-		// Testing the X-Axis
-		if (rect1.Width < rect2.Width) {
-			small = rect1;
-			big = rect2;
-		} else {
-			big = rect1;
-			small = rect2;
-		}
-
-		var l_hit = this.Between(big.L(), small.L(), big.R());
-		var r_hit = this.Between(big.R(), small.R(), big.L());
+		var l_hit = IsBetween(rect2.L(), rect1.L(), rect2.R());
+		var r_hit = IsBetween(rect2.R(), rect1.R(), rect2.L());
 		var x_hit = l_hit || r_hit;
 
-		// Gotta do it for the Y axis too
-		if (rect1.Height < rect2.Height) {
-			small = rect1;
-			big = rect2;
-		} else {
-			big = rect1;
-			small = rect2;
-		}
-
-		var t_hit = this.Between(big.T(), small.T(), big.B());
-		var b_hit = this.Between(big.B(), small.B(), big.T());
+		var t_hit = IsBetween(rect2.T(), rect1.T(), rect2.B());
+		var b_hit = IsBetween(rect2.B(), rect1.B(), rect2.T());
 		var y_hit = t_hit || b_hit;
 
 		// If we hit in at least one X and one Y we got a true hit
 		if (x_hit && y_hit) {
-			console.log("Collision.Rect: Hit");
 			rect1.HitX();
-			rect1.HitY();
 		}
-	},
-
-	Between: function(low, x, high) {
-		return (low < x && x < high);
 	}
 }
 
@@ -253,6 +249,10 @@ function Render() {
 
 function UpdateScene() {
 	Ball.Update();
+
+	for (var i = Players.length - 1; i >= 0; i--) {
+    	Players[i].Update();
+    };
 }
 
 window.requestAnimFrame = (function(){
