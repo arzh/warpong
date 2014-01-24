@@ -126,6 +126,20 @@ var Ball = {
 	}
 };
 
+function ramp_up(value, max) {
+	if (value >= max)
+		return max;
+
+	return value + 0.5;
+};
+
+function ramp_down(value, min) {
+	if (value <= min)
+		return min;
+
+	return value - 0.5;
+}
+
 function Paddle(x, y, width, height, color, position, upkey, downkey) {
 	this.X = x;
 	this.Y = y;
@@ -142,27 +156,39 @@ function Paddle(x, y, width, height, color, position, upkey, downkey) {
 	this.T = function(){ return this.Y; };
 	this.B = function(){ return this.Y + this.Height; };
 
-	this.HandleUp = function() {
-		this.vY -= 1;
+	this.move_up = false;
+	this.move_down = false;
+
+	this.onInputUp = function(keydown) {
+		this.move_up = keydown;
 	};
 
-	this.HandleDown = function() {
-		this.vY += 1;
+	this.onInputDown = function(keydown) {
+		this.move_down = keydown;
 	};
-
-	this.Stop = function() {
-		this.vY = 0;
-	}
 
 	this.Update = function() {
+		if (this.move_down) {
+			this.vY = ramp_up(this.vY, 3);
+		} else if (this.vY > 0){
+			this.vY = ramp_down(this.vY, 0);
+		}
+
+		if (this.move_up) {
+			this.vY = ramp_down(this.vY, -3);
+		} else if (this.vY < 0) {
+			this.vY = ramp_up(this.vY, 0);
+		}
+
 		this.Y += this.vY;
 	}
 
 	this.SetInput = function(upkey, downkey) {
-		Input.AddDownHandler(upkey, this.HandleUp.bind(this));
-		Input.AddDownHandler(downkey, this.HandleDown.bind(this));
-		Input.AddUpHandler(upkey, this.Stop.bind(this));
-		Input.AddUpHandler(downkey, this.Stop.bind(this));
+		Input.AddDownHandler(upkey, this.onInputUp.bind(this, true));
+		Input.AddDownHandler(downkey, this.onInputDown.bind(this, true));
+
+		Input.AddUpHandler(upkey, this.onInputUp.bind(this, false));
+		Input.AddUpHandler(downkey, this.onInputDown.bind(this, false));
 	};
 
 	this.SetInput(upkey, downkey);
